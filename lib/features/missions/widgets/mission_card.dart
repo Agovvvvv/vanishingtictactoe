@@ -254,71 +254,42 @@ class _MissionCardState extends State<MissionCard> with SingleTickerProviderStat
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // XP Reward and Progress Counter in one row
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.trending_up_rounded,
-                    color: Colors.grey.shade700,
-                    size: 16,
+            // XP Reward
+            Row(
+              children: [
+                Icon(
+                  Icons.star_rounded,
+                  color: Colors.amber,
+                  size: 18,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '+${widget.mission.xpReward} XP',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber.shade800,
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Progress',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.amber.withValues( alpha: 0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.star_rounded,
-                    color: Colors.amber,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '+${widget.mission.xpReward} XP',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber.shade800,
-                    ),
-                  ),
-                ],
+            // Progress Counter
+            Text(
+              '${widget.mission.currentCount}/${widget.mission.targetCount}',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: widget.mission.completed ? Colors.green.shade700 : primaryColor,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+        // Progress Bar
         AnimatedBuilder(
           animation: _progressAnimation,
           builder: (context, child) {
@@ -326,59 +297,33 @@ class _MissionCardState extends State<MissionCard> with SingleTickerProviderStat
               children: [
                 // Background track
                 Container(
-                  height: 16,
+                  height: 12,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
                 // Progress bar
                 FractionallySizedBox(
                   widthFactor: _progressAnimation.value,
                   child: Container(
-                    height: 16,
+                    height: 12,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                         colors: widget.mission.completed
                             ? [Colors.green.shade400, Colors.green.shade600]
-                            : [primaryColor.withValues( alpha: 0.8), primaryColor],
+                            : [primaryColor.withValues(alpha: 0.8), primaryColor],
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (widget.mission.completed ? Colors.green : primaryColor).withValues( alpha: 0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: widget.mission.completed
                         ? Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.check_circle_outline_rounded,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    'COMPLETED',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            child: Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 10,
                             ),
                           )
                         : null,
@@ -387,35 +332,6 @@ class _MissionCardState extends State<MissionCard> with SingleTickerProviderStat
               ],
             );
           },
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: (widget.mission.completed ? Colors.green : primaryColor).withValues( alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '${widget.mission.currentCount}/${widget.mission.targetCount}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: widget.mission.completed ? Colors.green.shade700 : primaryColor,
-                ),
-              ),
-            ),
-            Text(
-              '${widget.mission.progressPercentage.toStringAsFixed(0)}%',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: widget.mission.completed ? Colors.green.shade700 : Colors.grey.shade700,
-              ),
-            ),
-          ],
         ),
       ],
     );

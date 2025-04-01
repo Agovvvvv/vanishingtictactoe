@@ -1,5 +1,5 @@
 // Service Worker for Vanishing Tic Tac Toe
-const CACHE_NAME = 'vanishing-tictactoe-cache-v6';
+const CACHE_NAME = 'vanishing-tictactoe-cache-v7';
 const OFFLINE_URL = 'index.html';
 
 // Files to cache for offline use

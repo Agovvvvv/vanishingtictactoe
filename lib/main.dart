@@ -29,9 +29,11 @@ void main() async {
   await EnvConfig.load();
   AppLogger.info('Environment variables loaded successfully');
   
+  // Initialize Firebase with platform-specific options
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  AppLogger.info('Firebase initialized successfully');
 
   PresenceService().initialize();
   await FontPreloader.preloadFonts();

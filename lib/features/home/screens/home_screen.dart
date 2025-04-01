@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:vanishingtictactoe/features/friends/services/friend_service.dart';
 import 'package:vanishingtictactoe/core/utils/app_logger.dart';
+import 'package:vanishingtictactoe/features/home/widgets/grid_pattern_painter_widget.dart';
+import 'package:vanishingtictactoe/features/home/widgets/info_card_widget.dart';
 import 'package:vanishingtictactoe/shared/providers/user_provider.dart';
 import 'package:vanishingtictactoe/shared/providers/mission_provider.dart';
 import 'package:vanishingtictactoe/shared/providers/navigation_provider.dart';
@@ -30,9 +31,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _buttonAnimationController;
   late Animation<double> _buttonScaleAnimation;
 
-  final List<_BackgroundParticle> _particles = [];
-  final math.Random _random = math.Random();
-
   @override
   void initState() {
     super.initState();
@@ -43,9 +41,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_particles.isEmpty) {
-      _generateBackgroundParticles();
-    }
   }
 
   void _initializeAnimations() {
@@ -62,20 +57,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _buttonScaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
       CurvedAnimation(parent: _buttonAnimationController, curve: Curves.easeInOut),
     );
-  }
-
-  void _generateBackgroundParticles() {
-    for (int i = 0; i < 40; i++) {
-      _particles.add(_BackgroundParticle(
-        position: Offset(
-          _random.nextDouble() * MediaQuery.of(context).size.width,
-          _random.nextDouble() * MediaQuery.of(context).size.height,
-        ),
-        size: _random.nextDouble() * 8 + 2,
-        speed: _random.nextDouble() * 0.3 + 0.1,
-        angle: _random.nextDouble() * math.pi * 2,
-      ));
-    }
   }
 
   Future<void> _initializeData() async {
@@ -119,11 +100,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // Navigation is now handled directly through the NavigationProvider
 
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
 
     final hellModeProvider = Provider.of<HellModeProvider>(context);
     
@@ -148,22 +127,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       child: Stack(
         children: [
-          AnimatedBuilder(
-            animation: _backgroundAnimationController,
-            builder: (context, child) {
-              return CustomPaint(
-                size: Size(screenSize.width, screenSize.height),
-                painter: _BackgroundParticlePainter(
-                  particles: _particles,
-                  animationValue: _backgroundAnimationController.value,
-                ),
-              );
-            },
-          ),
           Positioned.fill(
             child: Opacity(
               opacity: 0.05,
-              child: CustomPaint(painter: _GridPatternPainter()),
+              child: GridPatternPainterWidget(),
             ),
           ),
           Column(
@@ -344,25 +311,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildInfoCard(
-                            'vs Computer', 
-                            '${user.vsComputerStats.gamesPlayed}', 
-                            Icons.computer,
-                            hellModeProvider.isHellModeActive,
+                          InfoCardWidget(
+                            title: 'vs Computer', 
+                            value: '${user.vsComputerStats.gamesPlayed}', 
+                            icon: Icons.computer,
+                            isHellMode: hellModeProvider.isHellModeActive,
                           ),
                           const SizedBox(width: 15),
-                          _buildInfoCard(
-                            'Wins', 
-                            '${user.vsComputerStats.gamesWon}', 
-                            Icons.emoji_events,
-                            hellModeProvider.isHellModeActive,
+                          InfoCardWidget(
+                            title: 'Wins', 
+                            value: '${user.vsComputerStats.gamesWon}', 
+                            icon: Icons.emoji_events,
+                            isHellMode: hellModeProvider.isHellModeActive,
                           ),
                           const SizedBox(width: 15),
-                          _buildInfoCard(
-                            hellModeProvider.isHellModeActive ? 'Hell Streak' : 'Streak', 
-                            '${user.vsComputerStats.currentWinStreak}', 
-                            Icons.local_fire_department,
-                            hellModeProvider.isHellModeActive,
+                          InfoCardWidget(
+                            title: hellModeProvider.isHellModeActive ? 'Hell Streak' : 'Streak', 
+                            value: '${user.vsComputerStats.currentWinStreak}', 
+                            icon: Icons.local_fire_department,
+                            isHellMode: hellModeProvider.isHellModeActive,
                           ),
                         ],
                       ),
@@ -455,186 +422,4 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 }
 
-class _BackgroundParticle {
-  Offset position;
-  final double size;
-  final double speed;
-  final double angle;
-  
-  _BackgroundParticle({
-    required this.position,
-    required this.size,
-    required this.speed,
-    required this.angle,
-  });
-  
-  void update(Size screenSize, double animationValue) {
-    // Move particles in a circular pattern
-    final time = animationValue * 2 * math.pi;
-    final dx = math.cos(angle + time) * speed;
-    final dy = math.sin(angle + time) * speed;
-    
-    position = Offset(
-      (position.dx + dx) % screenSize.width,
-      (position.dy + dy) % screenSize.height,
-    );
-  }
-}
 
-// Painter for background particles
-class _BackgroundParticlePainter extends CustomPainter {
-  final List<_BackgroundParticle> particles;
-  final double animationValue;
-  
-  _BackgroundParticlePainter({
-    required this.particles,
-    required this.animationValue,
-  });
-  
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Update and draw particles
-    for (final particle in particles) {
-      particle.update(size, animationValue);
-      
-      // Calculate opacity based on position (fade out at edges)
-      final distanceFromCenter = (particle.position - Offset(size.width / 2, size.height / 2)).distance;
-      final maxDistance = size.width < size.height ? size.width / 2 : size.height / 2;
-      final opacity = 0.7 - (distanceFromCenter / maxDistance).clamp(0.0, 0.6);
-      
-      final paint = Paint()
-        ..color = Colors.blue.shade200.withValues( alpha: opacity * 0.3)
-        ..style = PaintingStyle.fill
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-      
-      canvas.drawCircle(particle.position, particle.size, paint);
-    }
-  }
-  
-  @override
-  bool shouldRepaint(_BackgroundParticlePainter oldDelegate) => true;
-}
-
-// Painter for subtle grid pattern
-class _GridPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black.withValues( alpha: 0.1)
-      ..strokeWidth = 0.5
-      ..style = PaintingStyle.stroke;
-    
-    // Draw horizontal lines
-    for (double y = 0; y < size.height; y += 40) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-    
-    // Draw vertical lines
-    for (double x = 0; x < size.width; x += 40) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-  }
-  
-  @override
-  bool shouldRepaint(_GridPatternPainter oldDelegate) => false;
-}
-
-// Helper method to build info cards
-Widget _buildInfoCard(String title, String value, IconData icon, bool isHellMode) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(
-      color: isHellMode 
-          ? Colors.red.shade900.withValues(alpha: 0.3)
-          : Colors.white.withValues(alpha: 0.2),
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: isHellMode
-              ? Colors.red.shade900.withValues(alpha: 0.3)
-              : Colors.blue.shade200.withValues(alpha: 0.2),
-          blurRadius: 4,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: isHellMode ? Colors.orange.shade300 : Colors.blue.shade800,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon, 
-              size: 12, 
-              color: isHellMode ? Colors.orange.shade500 : Colors.blue.shade600
-            ),
-            const SizedBox(width: 3),
-            Text(
-              value,
-              style: TextStyle(
-                color: isHellMode ? Colors.white : Colors.black87,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-
-// Enhanced AppBarActions with improved styling and animations
-class AppBarActions extends StatelessWidget {
-  final Function(String) onNavigate;
-  
-  const AppBarActions({
-    super.key,
-    required this.onNavigate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final user = userProvider.user;
-    
-    return Row(
-      children: [
-        // Only show level badge if user is logged in and has level data
-        if (user != null)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(30),
-                onTap: () {
-                  onNavigate(AppRoutes.levelRoadmap);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: LevelBadge.fromUserLevel(
-                    userLevel: user.userLevel,
-                    fontSize: 12,
-                    iconSize: 16,
-                  ),
-                ),
-              ),
-            ),
-          ),        
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-}

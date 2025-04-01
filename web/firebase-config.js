@@ -9,3 +9,6 @@ window.firebaseConfig = {
   measurementId: "G-FKNT04Y1VT",
   databaseURL: "https://vanishing-tic-tac-toe.firebaseio.com"
 };
+
+// Make sure the configuration is available globally
+console.log('Firebase config loaded from firebase-config.js');
