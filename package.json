@@ -1,0 +1,18 @@
+{
+  "name": "vanishingtictactoe",
+  "version": "1.0.0",
+  "description": "A casual multiplayer Tic Tac Toe game with a twist - pieces vanish after a certain number of turns, adding a strategic element to the classic game.",
+  "scripts": {
+    "update-firebase-config": "node scripts/update_firebase_config.js",
+    "build": "npm run update-firebase-config && flutter build web --release",
+    "update-sw-version": "node update_service_worker_version.js",
+    "deploy": "firebase deploy --only hosting",
+    "build-and-deploy": "npm run build && npm run update-sw-version && npm run deploy"
+  },
+  "keywords": [],
+  "author": "Agov",
+  "license": "ISC",
+  "devDependencies": {
+    "dotenv": "^16.4.7"
+  }
+}

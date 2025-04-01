@@ -1,0 +1,379 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if the document belongs to the user
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+
+    // Special rule for username availability checks
+    match /users/{document=**} {
+      // Allow unauthenticated username availability checks
+      allow list: if !isAuthenticated();
+    }
+    
+    // User profile and presence rules
+    match /users/{userId} {
+      allow read: if isAuthenticated(); // Allow authenticated users to read user profiles
+      allow create: if isAuthenticated() && isOwner(userId); // Only owner can create
+      allow update: if isAuthenticated() && (
+        // Allow users to update their own profile (any fields)
+        isOwner(userId) ||
+        // Allow rank service to update specific rank-related fields
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mmr', 'rankPoints', 'rank', 'division', 'lastRankPointsChange']) &&
+          request.resource.data.mmr is number &&
+          request.resource.data.rankPoints is number &&
+          request.resource.data.rank is string &&
+          request.resource.data.division is string &&
+          request.resource.data.lastRankPointsChange is number
+        ) ||
+        // Allow updating friendIds array for friend operations
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['friendIds']) &&
+          request.resource.data.friendIds is list
+        )
+      );
+      allow delete: if false; // Prevent deletion of user profiles
+
+      // Notifications subcollection rules
+      match /notifications/{notificationId} {
+        // Only the owner can read their notifications
+        allow read: if isAuthenticated() && isOwner(userId);
+        // Allow listing notifications with composite queries
+        allow list: if isAuthenticated() && isOwner(userId);
+        
+        // Allow creating notifications for game challenges and responses
+        // 1. Sender must be authenticated
+        // 2. The sender ID in the notification must match the authenticated user
+        // 3. Must have required fields based on notification type
+        allow create: if isAuthenticated() && (
+          // Game challenge notifications
+          (request.resource.data.senderId == request.auth.uid &&
+           request.resource.data.type == 'gameChallenge' &&
+           request.resource.data.keys().hasAll(['type', 'senderId', 'senderUsername', 'timestamp', 'challengeId'])) ||
+          
+          // Challenge accepted notifications
+          (request.resource.data.senderId == request.auth.uid &&
+           request.resource.data.type == 'challengeAccepted' &&
+           request.resource.data.keys().hasAll(['type', 'senderId', 'senderUsername', 'timestamp', 'challengeId'])) ||
+          
+          // Challenge declined notifications
+          (request.resource.data.senderId == request.auth.uid &&
+           request.resource.data.type == 'challengeDeclined' &&
+           request.resource.data.keys().hasAll(['type', 'senderId', 'senderUsername', 'timestamp', 'challengeId'])) ||
+          
+          // Game starting notifications
+          (request.resource.data.senderId == request.auth.uid &&
+           request.resource.data.type == 'gameStarting' &&
+           request.resource.data.keys().hasAll(['type', 'senderId', 'senderUsername', 'timestamp', 'gameId', 'challengeId'])) ||
+          
+          // Challenge cancelled notifications
+          (request.resource.data.senderId == request.auth.uid &&
+           request.resource.data.type == 'challengeCancelled' &&
+           request.resource.data.keys().hasAll(['type', 'senderId', 'senderUsername', 'timestamp', 'challengeId'])) ||
+          
+          // Game result notifications
+          (request.resource.data.senderId == request.auth.uid &&
+           request.resource.data.type == 'gameResult' &&
+           request.resource.data.keys().hasAll(['type', 'senderId', 'senderUsername', 'timestamp', 'opponentUsername']))
+        );
+        
+        // Only the owner can update or delete their notifications
+        allow update: if isAuthenticated() && isOwner(userId);
+        allow delete: if isAuthenticated() && isOwner(userId);
+      }
+      
+      // Subcollections (unchanged)
+      match /missions/{missionId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+      
+      // Add permissions for mission_metadata collection
+      match /mission_metadata/{metadataId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+      
+      // Add permissions for profile customization
+      match /profile/{document=**} {
+        // Allow the owner to read and write their own profile customization
+        allow write: if isAuthenticated() && isOwner(userId);
+        
+        // Allow any authenticated user to read profile customization
+        // This enables friends to see each other's customized icons
+        allow read: if isAuthenticated();
+      }
+      
+      match /presence/{doc} {
+        allow read: if isAuthenticated();
+        allow write: if isOwner(userId);
+      }
+      match /friendRequests/{requestId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+      }
+      match /friends/{friendId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow create: if isAuthenticated() && (isOwner(userId) || request.auth.uid == friendId);
+        allow update: if isAuthenticated() && isOwner(userId);
+        allow delete: if isAuthenticated() && (isOwner(userId) || request.auth.uid == friendId);
+      }
+      match /match_history/{document=**} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow write: if isAuthenticated() && isOwner(userId);
+      }
+    }
+
+    // Game challenges collection rules - removed duplicate rule
+    
+    // Games collection for challenge-based games
+    match /games/{gameId} {
+      // Allow authenticated users to read games they're involved in
+      allow read: if isAuthenticated() && 
+                  (resource.data.players[0] == request.auth.uid || 
+                   resource.data.players[1] == request.auth.uid);
+      
+      // Allow authenticated users to create games
+      allow create: if isAuthenticated() && 
+                    request.resource.data.players is list &&
+                    request.resource.data.players.size() == 2 &&
+                    request.resource.data.players[0] == request.auth.uid;
+      
+      // Allow authenticated users to update games they're involved in
+      allow update: if isAuthenticated() && 
+                    (resource.data.players[0] == request.auth.uid || 
+                     resource.data.players[1] == request.auth.uid);
+      
+      // Don't allow deletion of games
+      allow delete: if false;
+    }
+    
+    // Challenges collection - expanded permissions for game moves
+    // ===== GAME CHALLENGES =====
+    match /challenges/{challengeId} {
+      // Basic permission check - is the user involved in this challenge?
+      function isInvolvedInChallenge() {
+        return resource.data.senderId == request.auth.uid || 
+               resource.data.receiverId == request.auth.uid;
+      }
+      
+      // Read permissions
+      allow read: if isAuthenticated() && isInvolvedInChallenge();
+      
+      // Create permissions
+      allow create: if isAuthenticated() && 
+                    request.resource.data.senderId == request.auth.uid &&
+                    request.resource.data.keys().hasAll(['senderId', 'senderUsername', 
+                                                        'receiverId', 'receiverUsername', 
+                                                        'status', 'timestamp', 'expirationTime']);
+      
+      // Update permissions - allow updates if the user is involved in the challenge
+      // with specific rules based on challenge status
+      allow update: if isAuthenticated() && (
+        // User is the sender of the challenge - can update in any state
+        resource.data.senderId == request.auth.uid ||
+        
+        // User is the receiver of the challenge - can update when pending
+        (resource.data.receiverId == request.auth.uid && 
+         resource.data.status == 'pending') ||
+        
+        // User is the receiver of the challenge - can update when accepted
+        (resource.data.receiverId == request.auth.uid && 
+         resource.data.status == 'accepted')
+      );
+      
+      // No deletion allowed
+      allow delete: if false;
+    }
+    
+    // Rest of your rules remain unchanged (matchmaking_queue, matches, friendlyMatches)
+    match /matchmaking_queue/{document=**} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (isOwner(resource.data.userId) || (resource.data.status == 'waiting' && request.resource.data.status == 'matched'));
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+    match /matches/{matchId} {
+      // Allow authenticated users to read matches they're involved in
+      // This includes both matchmaking and challenge-based games
+      allow read: if isAuthenticated() && (
+        resource.data.player1.id == request.auth.uid || 
+        resource.data.player2.id == request.auth.uid ||
+        (resource.data.players is list && resource.data.players.hasAny([request.auth.uid]))
+      );
+      
+      // Allow authenticated users to create matches
+      allow create: if isAuthenticated() && (
+        // Standard matchmaking game creation
+        (request.resource.data.keys().hasAll(['player1', 'player2', 'board', 'currentTurn', 'status']) && 
+         request.resource.data.player1 is map && 
+         request.resource.data.player2 is map && 
+         request.resource.data.board is list && 
+         request.resource.data.currentTurn in ['X', 'O'] && 
+         request.resource.data.status in ['active', 'completed']) ||
+        
+        // Challenge-based game creation
+        (request.resource.data.keys().hasAll(['players', 'board', 'currentTurn', 'status', 'challengeId']) && 
+         request.resource.data.players is list && 
+         request.resource.data.players.hasAny([request.auth.uid]) && 
+         request.resource.data.board is list && 
+         request.resource.data.currentTurn in ['X', 'O'] && 
+         request.resource.data.status in ['active', 'completed'])
+      );
+      
+      // Allow authenticated users to update matches they're involved in
+      allow update: if isAuthenticated() && (
+        // Standard matchmaking game updates
+        ((resource.data.player1.id == request.auth.uid || resource.data.player2.id == request.auth.uid) && 
+         request.resource.data.board is list && 
+         request.resource.data.currentTurn in ['X', 'O'] && 
+         request.resource.data.status in ['active', 'completed']) ||
+        
+        // Challenge-based game updates
+        ((resource.data.players is list && resource.data.players.hasAny([request.auth.uid])) && 
+         request.resource.data.board is list && 
+         request.resource.data.currentTurn in ['X', 'O'] && 
+         request.resource.data.status in ['active', 'completed']) ||
+        
+        // Allow rank service to update rank-related fields
+        (request.resource.data.diff(resource.data).affectedKeys().hasAny(['rankPointsUpdated', 'rankUpdateTimestamp', 'lastAction']) && 
+         request.resource.data.board is list && 
+         request.resource.data.currentTurn in ['X', 'O'] && 
+         request.resource.data.status in ['active', 'completed'])
+      );
+      
+      // Don't allow deletion of matches
+      allow delete: if false;
+    }
+    // Friendly matches rules
+    match /friendlyMatches/{matchCode} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+    
+    // Tournament rules
+    match /tournaments/{tournamentId} {
+      // Helper function to check if user is authenticated
+      function isUserAuthenticated() {
+        return request.auth != null;
+      }
+      
+      // Helper function to check if user is the creator
+      function isCreator() {
+        return resource.data.creator_id == request.auth.uid;
+      }
+      
+      // Helper function to check if user is a participant
+      function isUserParticipant() {
+        // Check if the players array exists
+        return resource.data.players != null && 
+               resource.data.players.size() > 0 && 
+               exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      }
+      
+      // Helper function to check if the tournament is in waiting state
+      function isWaiting() {
+        return resource.data.status == 'waiting';
+      }
+      
+      // Allow authenticated users to read tournaments they're involved in or in waiting status
+      allow read: if isUserAuthenticated() && 
+                   (isCreator() || isUserParticipant() || isWaiting() || 
+                    resource.data.status == 'in_progress');
+      
+      // Allow authenticated users to list tournaments
+      allow list: if isUserAuthenticated();
+      
+      // Allow authenticated users to create tournaments
+      allow create: if isUserAuthenticated() && 
+                    request.resource.data.creator_id == request.auth.uid && 
+                    request.resource.data.status == 'waiting';
+      
+      // Allow authenticated users to update tournaments they're involved in
+      allow update: if isUserAuthenticated() && (
+        // Creator can update tournament
+        isCreator() ||
+        
+        // Allow joining a waiting tournament (only players array modified)
+        (isWaiting() && 
+         request.resource.data.status == 'waiting' &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players'])) ||
+        
+        // Allow participants to leave or update a tournament they're in
+        (isUserParticipant() && isWaiting()) ||
+        
+        // Allow creator to start the tournament
+        (isCreator() && 
+         isWaiting() && 
+         request.resource.data.status == 'in_progress') ||
+        
+        // Allow any participant to update matches in an active tournament
+        (resource.data.status == 'in_progress' &&
+         request.resource.data.status == 'in_progress' &&
+         request.auth != null)
+      );
+      
+      // Don't allow deletion of tournaments except by creator when in waiting status
+      allow delete: if isUserAuthenticated() && 
+                    isCreator() && 
+                    isWaiting();
+    }
+    
+    // Tournament games rules
+    match /tournament_games/{gameId} {
+      // Allow authenticated users to read games they're involved in
+      allow read: if isAuthenticated() && 
+                  (resource.data.player1_id == request.auth.uid || 
+                   resource.data.player2_id == request.auth.uid);
+      
+      // Allow authenticated users to create games (this is typically done by the tournament service)
+      allow create: if isAuthenticated();
+      
+      // Allow authenticated users to update games they're involved in
+      allow update: if isAuthenticated() && (
+        // Player can make a move
+        ((resource.data.player1_id == request.auth.uid || 
+          resource.data.player2_id == request.auth.uid) && 
+         request.resource.data.status == 'in_progress') ||
+         
+        // System can update game status
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'winner_id', 'updated_at'])
+      );
+      
+      // Don't allow deletion of games
+      allow delete: if false;
+    }
+    
+    // Ensure active matches can be accessed for both friendly and challenge matches
+    match /active_matches/{matchId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated();
+      
+      allow update: if isAuthenticated() && (
+        // Standard player access
+        resource.data.player1.id == request.auth.uid || 
+        resource.data.player2.id == request.auth.uid ||
+        
+        // Challenge-based game access
+        (resource.data.players is list && resource.data.players.hasAny([request.auth.uid])) ||
+        
+        // Friendly match access
+        request.resource.data.matchType == 'friendly' ||
+        
+        // Challenge match access
+        request.resource.data.matchType == 'challenge'
+      );
+      
+      allow delete: if false;  // Matches should never be deleted directly
+    }
+  }
+}

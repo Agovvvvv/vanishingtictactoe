@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://vanishing-tic-tac-toe.web.app/sitemap.xml

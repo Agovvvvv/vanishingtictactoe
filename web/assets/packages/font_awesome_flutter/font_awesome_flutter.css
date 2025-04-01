@@ -1,0 +1,20 @@
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('lib/fonts/fa-solid-900.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('lib/fonts/fa-regular-400.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('lib/fonts/fa-brands-400.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
