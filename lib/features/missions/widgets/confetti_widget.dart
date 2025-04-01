@@ -13,6 +13,10 @@ class Confetti {
   int shapeType;
   bool isActive = true;
   
+  // Cache calculated values
+  double _lastDelta = 0;
+  double _lastUpdateTime = 0;
+  
   Confetti({
     required this.x,
     required this.y,
@@ -29,6 +33,14 @@ class Confetti {
     // Skip update if not active
     if (!isActive) return;
     
+    // Skip redundant updates with same delta
+    if (_lastDelta == delta && _lastUpdateTime > 0) return;
+    _lastDelta = delta;
+    _lastUpdateTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
+    
+    // Scale delta for consistent physics
+    final scaledDelta = delta * 60;
+    
     // Update position with smoother physics
     x += velocity.dx * delta;
     y += velocity.dy * delta;
@@ -37,15 +49,15 @@ class Confetti {
     // Horizontal velocity decreases over time (air resistance)
     // Vertical velocity increases (gravity) but with a terminal velocity
     final horizontalDrag = velocity.dx * 0.985; // Slightly less drag for longer travel
-    final verticalAcceleration = math.min(velocity.dy + 0.15 * delta * 60, 7.0); // Adjusted gravity and terminal velocity
+    final verticalAcceleration = math.min(velocity.dy + 0.15 * scaledDelta, 7.0); // Adjusted gravity and terminal velocity
     velocity = Offset(horizontalDrag, verticalAcceleration);
     
     // Add enhanced horizontal oscillation for more natural movement
     // This creates a more pronounced fluttering effect
-    x += math.sin(y * 2.5 + rotation * 1.2) * 0.0015 * delta * 60;
+    x += math.sin(y * 2.5 + rotation * 1.2) * 0.0015 * scaledDelta;
     
     // Update rotation with improved randomness for more natural movement
-    rotation += (rotationSpeed + math.sin(y * 1.8) * 0.003) * delta * 60;
+    rotation += (rotationSpeed + math.sin(y * 1.8) * 0.003) * scaledDelta;
     
     // Deactivate if out of bounds (with some margin)
     // Extended bounds to keep confetti visible longer
@@ -62,8 +74,51 @@ class ConfettiController extends ChangeNotifier {
   bool _isActive = false;
   double _progress = 0.0;
   
+  // Cache random values for better performance
+  final List<double> _cachedRandomValues = List.generate(100, (index) => math.Random().nextDouble());
+  int _randomIndex = 0;
+  
+  // Cached color lists
+  late final List<Color> _normalColors;
+  late final List<Color> _hellColors;
+  
+  ConfettiController() {
+    _initializeColorCache();
+  }
+  
+  void _initializeColorCache() {
+    _normalColors = [
+      Colors.blue.shade300,
+      Colors.blue.shade400,
+      Colors.green.shade300,
+      Colors.green.shade400,
+      Colors.purple.shade300,
+      Colors.teal.shade300,
+      Colors.cyan.shade300,
+      Colors.amber.shade300,
+    ];
+    
+    _hellColors = [
+      Colors.red.shade300,
+      Colors.red.shade400,
+      Colors.red.shade500,
+      Colors.orange.shade300,
+      Colors.orange.shade400,
+      Colors.amber.shade300,
+      Colors.yellow.shade400,
+      Colors.pink.shade300,
+    ];
+  }
+  
   bool get isActive => _isActive;
   double get progress => _progress;
+  
+  /// Get a cached random value for better performance
+  double _getNextRandom() {
+    final value = _cachedRandomValues[_randomIndex];
+    _randomIndex = (_randomIndex + 1) % _cachedRandomValues.length;
+    return value;
+  }
   
   /// Generate confetti with the given parameters
   void generateConfetti({
@@ -75,9 +130,13 @@ class ConfettiController extends ChangeNotifier {
     // Clear any existing confetti
     confetti.clear();
     
-    // Significantly increase the number of confetti particles for a more impressive effect
-    // Default count is now a base value that we'll multiply
-    final int actualCount = count * 3; // Triple the confetti count
+    // Limit the number of confetti particles for better performance
+    // Adjust based on device capabilities
+    final int actualCount = math.min(count * 2, 300); // Reduced from triple to double
+    
+    // Pre-calculate common values
+    final colorList = isHellMode ? _hellColors : _normalColors;
+    final colorCount = colorList.length;
     
     // Generate new confetti with staggered emission for more natural effect
     for (int i = 0; i < actualCount; i++) {
@@ -86,8 +145,8 @@ class ConfettiController extends ChangeNotifier {
       final double burstOffsetX = (burstPoint - 1) * 0.15; // Spread burst points horizontally
       
       // Vary the initial positions more for a wider, more natural burst
-      final double angle = _random.nextDouble() * math.pi * 2;
-      final double distance = _random.nextDouble() * 0.35 * spread;
+      final double angle = _getNextRandom() * math.pi * 2;
+      final double distance = _getNextRandom() * 0.35 * spread;
       final double centerX = 0.5 + burstOffsetX;
       final double centerY = 0.5 - verticalPosition / 2;
       
@@ -96,25 +155,25 @@ class ConfettiController extends ChangeNotifier {
       final double y = centerY + math.sin(angle) * distance;
       
       // Create more varied velocities for more dynamic movement
-      final double speed = _random.nextDouble() * 4.0 + 2.0; // Increased base speed
-      final double vAngle = angle + (_random.nextDouble() - 0.5) * 1.2; // More angle variation
+      final double speed = _getNextRandom() * 4.0 + 2.0; // Increased base speed
+      final double vAngle = angle + (_getNextRandom() - 0.5) * 1.2; // More angle variation
       
       // Create different sizes for different types of confetti
-      final double baseSize = _random.nextDouble() * 6 + 2; // Slightly smaller base size for performance
+      final double baseSize = _getNextRandom() * 6 + 2; // Slightly smaller base size for performance
       final double sizeVariation = i % 10 == 0 ? 2.0 : 1.0; // Some particles are larger
       
       confetti.add(Confetti(
         x: x,
         y: y,
-        color: _getRandomColor(isHellMode),
+        color: colorList[i % colorCount],
         size: baseSize * sizeVariation,
         velocity: Offset(
-          math.cos(vAngle) * speed * (_random.nextDouble() * 0.6 + 0.4),
-          math.sin(vAngle) * speed * (_random.nextDouble() * 0.6 + 0.4) - 5.0, // Stronger initial upward velocity
+          math.cos(vAngle) * speed * (_getNextRandom() * 0.6 + 0.4),
+          math.sin(vAngle) * speed * (_getNextRandom() * 0.6 + 0.4) - 5.0, // Stronger initial upward velocity
         ),
-        rotation: _random.nextDouble() * 2 * math.pi,
+        rotation: _getNextRandom() * 2 * math.pi,
         shapeType: i % 5, // Use 5 different shapes
-        rotationSpeed: (_random.nextDouble() - 0.5) * 0.08, // More rotation variation
+        rotationSpeed: (_getNextRandom() - 0.5) * 0.08, // More rotation variation
       ));
     }
     
@@ -135,30 +194,11 @@ class ConfettiController extends ChangeNotifier {
     notifyListeners();
   }
   
-  /// Get a random color based on the mode
-  Color _getRandomColor(bool isHellMode) {
-    final colors = isHellMode
-        ? [
-            Colors.red.shade300,
-            Colors.red.shade400,
-            Colors.red.shade500,
-            Colors.orange.shade300,
-            Colors.orange.shade400,
-            Colors.amber.shade300,
-            Colors.yellow.shade400,
-            Colors.pink.shade300,
-          ]
-        : [
-            Colors.blue.shade300,
-            Colors.blue.shade400,
-            Colors.green.shade300,
-            Colors.green.shade400,
-            Colors.purple.shade300,
-            Colors.teal.shade300,
-            Colors.cyan.shade300,
-            Colors.amber.shade300,
-          ];
-    return colors[_random.nextInt(colors.length)];
+  /// Clear all confetti particles
+  void clear() {
+    confetti.clear();
+    _isActive = false;
+    notifyListeners();
   }
 }
 
@@ -187,14 +227,17 @@ class _ConfettiWidgetState extends State<ConfettiWidget> with SingleTickerProvid
   // Track the last frame time for delta calculation
   double _lastFrameTime = 0;
   
+  // Flag to skip frames when device is struggling
+  int _frameSkipCounter = 0;
+  
   @override
   void initState() {
     super.initState();
     // Create a ticker for smooth animation independent of parent rebuilds
-    // Use a higher frame rate for smoother animation
+    // Use a lower frame rate for better performance
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 8), // ~120fps target for smoother animation
+      duration: const Duration(milliseconds: 16), // ~60fps target is sufficient
     );
     _animController.repeat();
     
@@ -223,11 +266,15 @@ class _ConfettiWidgetState extends State<ConfettiWidget> with SingleTickerProvid
         final deltaTime = math.min(0.05, currentTime - _lastFrameTime); // Cap at 50ms to prevent huge jumps
         _lastFrameTime = currentTime;
         
-        // Update all confetti with the calculated delta time
-        // This ensures smooth animation regardless of frame rate
-        for (final confetti in widget.controller.confetti) {
-          if (confetti.isActive) {
-            confetti.update(deltaTime, Size(widget.width, widget.height));
+        // Skip frames if needed for performance
+        _frameSkipCounter = (_frameSkipCounter + 1) % 2;
+        if (_frameSkipCounter == 0) {
+          // Update all confetti with the calculated delta time
+          // This ensures smooth animation regardless of frame rate
+          for (final confetti in widget.controller.confetti) {
+            if (confetti.isActive) {
+              confetti.update(deltaTime, Size(widget.width, widget.height));
+            }
           }
         }
         
@@ -240,6 +287,7 @@ class _ConfettiWidgetState extends State<ConfettiWidget> with SingleTickerProvid
               confetti: widget.controller.confetti,
               progress: widget.controller.progress,
               cachedPaths: _cachedPaths,
+              screenSize: Size(widget.width, widget.height),
             ),
           ),
         );
@@ -253,6 +301,7 @@ class _ConfettiPainter extends CustomPainter {
   final List<Confetti> confetti;
   final double progress;
   final Map<int, Path> cachedPaths;
+  final Size screenSize;
   
   // Reusable paint objects
   final Paint _fillPaint = Paint()..style = PaintingStyle.fill;
@@ -260,10 +309,15 @@ class _ConfettiPainter extends CustomPainter {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.2;
   
+  // Cache for active confetti
+  List<Confetti>? _activeConfettiCache;
+  double _lastProgress = -1;
+  
   _ConfettiPainter({
     required this.confetti,
     required this.progress,
     required this.cachedPaths,
+    required this.screenSize,
   });
   
   @override
@@ -273,10 +327,17 @@ class _ConfettiPainter extends CustomPainter {
     final whiteOpacity = opacity * 0.8;
     
     // Update stroke paint opacity
-    _strokePaint.color = Colors.white.withValues( alpha: whiteOpacity);
+    _strokePaint.color = Colors.white.withOpacity(whiteOpacity);
     
     // Only process active confetti - no need to update physics here as it's now done in the build method
-    final activeConfetti = confetti.where((c) => c.isActive).toList();
+    List<Confetti> activeConfetti;
+    if (_activeConfettiCache != null && _lastProgress == progress) {
+      activeConfetti = _activeConfettiCache!;
+    } else {
+      activeConfetti = confetti.where((c) => c.isActive).toList();
+      _activeConfettiCache = activeConfetti;
+      _lastProgress = progress;
+    }
     
     // Skip drawing if no active confetti
     if (activeConfetti.isEmpty) return;
@@ -284,8 +345,6 @@ class _ConfettiPainter extends CustomPainter {
     // Group confetti by shape type to minimize state changes
     final Map<int, List<Confetti>> groupedConfetti = {};
     for (final item in activeConfetti) {
-      if (!item.isActive) continue;
-      
       if (!groupedConfetti.containsKey(item.shapeType)) {
         groupedConfetti[item.shapeType] = [];
       }
@@ -315,7 +374,7 @@ class _ConfettiPainter extends CustomPainter {
         
         // Set color for current confetti with slight shimmer effect
         final shimmerFactor = 1.0 + math.sin(item.rotation * 2) * 0.1;
-        _fillPaint.color = item.color.withValues( alpha: opacity * shimmerFactor);
+        _fillPaint.color = item.color.withOpacity(opacity * shimmerFactor);
         
         switch (shapeType) {
           case 0: // Rectangle
@@ -364,11 +423,12 @@ class _ConfettiPainter extends CustomPainter {
       }
     });
   }
+  
   @override
   bool shouldRepaint(_ConfettiPainter oldDelegate) {
-    // Always repaint during active animation for maximum smoothness
-    // This ensures we get constant updates for the animation
-    return true;
+    // Only repaint if progress changed or confetti count changed
+    return oldDelegate.progress != progress || 
+           oldDelegate.confetti.length != confetti.length;
   }
   
   @override
@@ -447,5 +507,4 @@ class _ConfettiPainter extends CustomPainter {
     cache[cacheKey] = path;
     return path;
   }
-  
 }
