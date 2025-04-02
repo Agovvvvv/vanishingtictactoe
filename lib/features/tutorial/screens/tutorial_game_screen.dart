@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import 'package:vanishingtictactoe/core/navigation/navigation_service.dart';
 import 'package:vanishingtictactoe/features/game/models/computer_player.dart';
-import 'package:vanishingtictactoe/features/game/widgets/match/game_board_widget.dart';
-import 'package:vanishingtictactoe/features/game/widgets/match/turn_indicator_widget.dart';
-import 'package:vanishingtictactoe/features/home/screens/home_screen.dart';
 import 'package:vanishingtictactoe/features/tutorial/models/tutorial_game_logic.dart';
+import 'package:vanishingtictactoe/features/tutorial/widgets/game_tutorial/index.dart';
+import 'package:vanishingtictactoe/features/tutorial/widgets/normal_tutorial/skip_button_widget.dart';
 import 'package:vanishingtictactoe/shared/models/player.dart';
 import 'package:vanishingtictactoe/shared/providers/game_provider.dart';
 
@@ -17,7 +15,7 @@ class TutorialGameScreen extends StatefulWidget {
   State<TutorialGameScreen> createState() => _TutorialGameScreenState();
 }
 
-class _TutorialGameScreenState extends State<TutorialGameScreen> {
+class _TutorialGameScreenState extends State<TutorialGameScreen> with SingleTickerProviderStateMixin {
   late TutorialGameLogic _gameLogic;
   late ComputerPlayer _computerPlayer;
   late Player _humanPlayer;
@@ -28,9 +26,25 @@ class _TutorialGameScreenState extends State<TutorialGameScreen> {
   bool _isInteractionDisabled = false;
   late GameProvider _gameProvider;
   
+  // Animation controller for the flashing effect
+  late AnimationController _flashingController;
+  late Animation<double> _flashingAnimation;
+  
   @override
   void initState() {
     super.initState();
+    
+    // Initialize animation controller for flashing effect
+    _flashingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..repeat(reverse: true);
+    
+    _flashingAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(_flashingController);
+    
     _initializeGame();
   }
   
@@ -152,17 +166,18 @@ class _TutorialGameScreenState extends State<TutorialGameScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildDemoCell('X', false),
-                  _buildDemoCell('O', false),
-                  _buildDemoCell('X', false),
+                  TutorialDemoCellWidget(symbol: 'X', isFlashing: false, flashingAnimation: _flashingAnimation),
+                  TutorialDemoCellWidget(symbol: 'O', isFlashing: false, flashingAnimation: _flashingAnimation),
+                  TutorialDemoCellWidget(symbol: 'X', isFlashing: false, flashingAnimation: _flashingAnimation),
                   const Icon(Icons.arrow_forward, color: Colors.grey),
-                  _buildDemoCell('', true), // Flashing empty cell
-                  _buildDemoCell('O', false),
-                  _buildDemoCell('X', false),
+                  TutorialDemoCellWidget(symbol: '', isFlashing: true, flashingAnimation: _flashingAnimation), 
+                  TutorialDemoCellWidget(symbol: 'O', isFlashing: false, flashingAnimation: _flashingAnimation),
+                  TutorialDemoCellWidget(symbol: 'X', isFlashing: false, flashingAnimation: _flashingAnimation),
                 ],
               ),
             ),
             const SizedBox(height: 12),
+            
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
@@ -211,30 +226,10 @@ class _TutorialGameScreenState extends State<TutorialGameScreen> {
     );
   }
 
-  // Helper method to build a demo cell for the vanishing effect explanation
-  Widget _buildDemoCell(String symbol, bool isFlashing) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 500),
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        color: isFlashing 
-            ? (DateTime.now().millisecondsSinceEpoch % 1000 < 500 ? Colors.orange.withValues( alpha: 0.3) : Colors.white)
-            : Colors.white,
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Center(
-        child: Text(
-          symbol,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: symbol == 'X' ? Colors.blue : Colors.red,
-          ),
-        ),
-      ),
-    );
+  @override
+  void dispose() {
+    _flashingController.dispose();
+    super.dispose();
   }
 
   void _completeTutorial() async {
@@ -245,241 +240,57 @@ class _TutorialGameScreenState extends State<TutorialGameScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              Icon(Icons.celebration, color: Colors.blue.shade700, size: 24),
-              const SizedBox(width: 8),
-              const Text('Tutorial Complete!'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Great job! You now understand how Vanishing Tic Tac Toe works. Ready to play for real?',
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Column(
-                  children: [
-                    Icon(Icons.emoji_events, color: Colors.amber, size: 40),
-                    SizedBox(height: 8),
-                    Text(
-                      'You\'re ready to play!',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop();
-                NavigationService.instance.navigateToAndRemoveUntil('/main');
-
-              },
-              icon: const Icon(Icons.play_arrow, size: 18, color: Colors.white,),
-              label: const Text('Let\'s Play!'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade700,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-            ),
-          ],
-        ),
+        builder: (context) => TutorialCompletionDialogWidget(),
       );
     }
   }
   
-  void _skipTutorial() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('tutorial_completed', true);
-    
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    }
-  }
-  
-  // Add the missing build method
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _gameProvider,
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.blue.shade700,
-          elevation: 0,
-          automaticallyImplyLeading: false, // This removes the back button
-          title: const Text(
-            'Tutorial Game',
-            style: TextStyle(fontWeight: FontWeight.w600),
-            selectionColor: Colors.white,
-          ),
-          actions: [
-            TextButton.icon(
-              onPressed: _skipTutorial,
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              icon: const Icon(Icons.skip_next, size: 18),
-              label: const Text('Skip', style: TextStyle(fontSize: 14)),
-            ),
-          ],
-        ),
-        body: Column(
+        appBar: _buildAppBar(),
+        body: SafeArea(
+          child: Column(
           children: [
             // Tutorial instruction card
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade50, Colors.blue.shade100],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blue.shade200.withValues( alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      _moveCount < 3 ? Icons.touch_app : Icons.remove_circle_outline,
-                      color: Colors.blue.shade700,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _moveCount < 3 
-                          ? 'Play normally - make your move!' 
-                          : 'Watch for the vanishing effect!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue.shade900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            TutorialInstructionCardWidget(moveCount: _moveCount),
             
             // Turn indicator
-            Consumer<GameProvider>(
-              builder: (context, gameProvider, _) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: TurnIndicatorWidget(
-                    gameProvider: gameProvider,
-                  ),
-                );
-              },
-            ),
+            TutorialTurnIndicatorWidget(),
             
             // Game board
-            Expanded(
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Container(
-                    margin: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.shade200.withValues( alpha: 0.4),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: Colors.blue.shade50,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Consumer<GameProvider>(
-                      builder: (context, gameProvider, _) {
-                        return GameBoardWidget(
-                          isInteractionDisabled: _isInteractionDisabled || 
-                              _gameLogic.currentPlayer != _humanPlayer.symbol,
-                          onCellTapped: _handleCellTapped,
-                          gameLogic: _gameLogic,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
+            TutorialGameBoardWidget(
+              isInteractionDisabled: _isInteractionDisabled,
+              handleCellTapped: _handleCellTapped,
+              gameLogic: _gameLogic,
+              humanPlayer: _humanPlayer,
             ),
             
             // Move counter
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.history,
-                    size: 18,
-                    color: Colors.blue.shade700,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Your moves: ${(_moveCount + 1) ~/ 2}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            TutorialMoveCounterWidget(playerMoves: _moveCount),
           ],
-        ),
+        )),
       ),
+    );
+  }
+  
+  // Build the app bar with skip button
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.blue.shade700,
+      elevation: 0,
+      automaticallyImplyLeading: false, // This removes the back button
+      title: const Text(
+        'Tutorial Game',
+        style: TextStyle(fontWeight: FontWeight.w600),
+        selectionColor: Colors.white,
+      ),
+      actions: [
+        TutorialSkipButtonWidget(),
+      ],
     );
   }
 }
