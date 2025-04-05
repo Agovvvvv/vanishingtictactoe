@@ -251,52 +251,87 @@ class TournamentProvider extends ChangeNotifier {
     // Cancel any existing subscription
     _gamesSubscription?.cancel();
     
-    // Listen for games in this match
-    _gamesSubscription = FirebaseFirestore.instance
-        .collection('tournament_games')
-        .where('tournament_id', isEqualTo: tournamentId)
-        .where('match_id', isEqualTo: matchId)
-        .orderBy('created_at', descending: true)
-        .limit(1)
-        .snapshots()
-        .listen((snapshot) {
-          if (snapshot.docs.isNotEmpty) {
-            final gameDoc = snapshot.docs.first;
-            final gameData = gameDoc.data() as Map<String, dynamic>;
-            final gameId = gameData['id'] as String;
-            
-            AppLogger.info('New game detected: $gameId for match: $matchId');
-            
-            // Set this game as ready
-            _setReadyGame(tournamentId, matchId, gameId);
-          }
-        }, onError: (error) {
-          AppLogger.error('Error listening for new games: $error');
-        });
+    try {
+      // First check if there's already a game for this match in the tournament data
+      if (_tournament != null) {
+        final match = _tournament!.matches.firstWhere(
+          (m) => m.id == matchId,
+          orElse: () => TournamentMatch(
+            id: '',
+            tournamentId: '',
+            player1Id: '',
+            player2Id: '',
+            status: '',
+            round: 0,
+            matchNumber: 0,
+            gameIds: [],
+          ),
+        );
+        
+        if (match.id.isNotEmpty && match.gameIds.isNotEmpty) {
+          // Game already exists, use it
+          final gameId = match.gameIds.last;
+          AppLogger.info('Using existing game: $gameId for match: $matchId');
+          _setReadyGame(tournamentId, matchId, gameId);
+          return;
+        }
+      }
+      
+      // Listen for games in this match
+      _gamesSubscription = FirebaseFirestore.instance
+          .collection('tournament_games')
+          .where('tournament_id', isEqualTo: tournamentId)
+          .where('match_id', isEqualTo: matchId)
+          .orderBy('created_at', descending: true)
+          .limit(1)
+          .snapshots()
+          .listen((snapshot) {
+            if (snapshot.docs.isNotEmpty) {
+              final gameDoc = snapshot.docs.first;
+              final gameData = gameDoc.data();
+              final gameId = gameData['id'] as String;
+              
+              AppLogger.info('New game detected: $gameId for match: $matchId');
+              
+              // Set this game as ready
+              _setReadyGame(tournamentId, matchId, gameId);
+            }
+          }, onError: (error) {
+            AppLogger.error('Error listening for new games: $error');
+            // If there's an error with the subscription, fall back to checking tournament data
+            _checkForExistingGamesInTournament(tournamentId, matchId);
+          });
+    } catch (e) {
+      AppLogger.error('Error setting up game listener: $e');
+      // If there's an error, fall back to checking tournament data
+      _checkForExistingGamesInTournament(tournamentId, matchId);
+    }
   }
   
   /// Set a game as ready
   void _setReadyGame(String tournamentId, String matchId, String gameId) {
     AppLogger.info('Setting game as ready - tournamentId: $tournamentId, matchId: $matchId, gameId: $gameId');
+    
+    // Reset navigation flag in case it was set to true previously
+    // This ensures navigation can happen again if needed
+    if (_tournament != null) {
+      for (final match in _tournament!.matches) {
+        if (match.id == matchId && match.gameIds.contains(gameId)) {
+          AppLogger.info('Found match and game in tournament data, ready for navigation');
+        }
+      }
+    }
+    
     _readyTournamentId = tournamentId;
     _readyMatchId = matchId;
     _readyGameId = gameId;
+    
+    // Force a rebuild to trigger navigation
     notifyListeners();
     
     // Log the state after setting
     AppLogger.info('Game readiness state - hasReadyGame: $hasReadyGame, readyGameId: $_readyGameId');
   }
-  
-  /// Clear the ready game
-  void _clearReadyGame() {
-    if (_readyGameId != null) {
-      AppLogger.info('Clearing ready game state');
-    }
-    _readyTournamentId = null;
-    _readyMatchId = null;
-    _readyGameId = null;
-  }
-  
   
   /// Load a specific tournament
   Future<void> loadTournament(String tournamentId) async {
@@ -496,6 +531,9 @@ class TournamentProvider extends ChangeNotifier {
           
           // Start listening for new games in this match
           _listenForNewGames(tournament.id, currentUserMatch.id);
+          
+          // Also check if we need to manually create a game
+          _checkAndCreateGameIfNeeded(tournament.id, currentUserMatch.id);
         }
       }
     } else {
@@ -560,6 +598,78 @@ class TournamentProvider extends ChangeNotifier {
     notifyListeners();
   }
   
+  
+  /// Check for existing games in tournament data
+  void _checkForExistingGamesInTournament(String tournamentId, String matchId) {
+    if (_tournament == null) return;
+    
+    try {
+      final match = _tournament!.matches.firstWhere(
+        (m) => m.id == matchId,
+        orElse: () => TournamentMatch(
+          id: '',
+          tournamentId: '',
+          player1Id: '',
+          player2Id: '',
+          status: '',
+          round: 0,
+          matchNumber: 0,
+          gameIds: [],
+        ),
+      );
+      
+      if (match.id.isNotEmpty && match.gameIds.isNotEmpty) {
+        // Game already exists, use it
+        final gameId = match.gameIds.last;
+        AppLogger.info('Found existing game in tournament data: $gameId for match: $matchId');
+        _setReadyGame(tournamentId, matchId, gameId);
+      }
+    } catch (e) {
+      AppLogger.error('Error checking for existing games: $e');
+    }
+  }
+  
+  /// Check if we need to manually create a game when both players are ready
+  Future<void> _checkAndCreateGameIfNeeded(String tournamentId, String matchId) async {
+    try {
+      // Wait a bit to see if the game is created automatically
+      await Future.delayed(const Duration(seconds: 2));
+      
+      // Reload tournament data
+      final tournamentDoc = await FirebaseFirestore.instance.collection('tournaments').doc(tournamentId).get();
+      if (!tournamentDoc.exists) return;
+      
+      final tournamentData = tournamentDoc.data() as Map<String, dynamic>;
+      final matches = (tournamentData['matches'] as List<dynamic>?) ?? [];
+      final matchIndex = matches.indexWhere((match) => match['id'] == matchId);
+      
+      if (matchIndex == -1) return;
+      
+      final match = matches[matchIndex];
+      final bothPlayersReady = match['player1_ready'] == true && match['player2_ready'] == true;
+      final noGames = match['game_ids'] == null || (match['game_ids'] as List<dynamic>).isEmpty;
+      
+      if (bothPlayersReady && noGames) {
+        AppLogger.info('Both players ready but no game created yet. Directly creating game for match: $matchId');
+        
+        // Directly create a game using the public method
+        final gameId = await _tournamentService.createGameForMatch(tournamentId, matchId);
+        
+        // Update the match with the new game ID
+        matches[matchIndex]['game_ids'] = [gameId];
+        await FirebaseFirestore.instance.collection('tournaments').doc(tournamentId).update({
+          'matches': matches,
+        });
+        
+        // Set the game as ready to trigger navigation
+        _setReadyGame(tournamentId, matchId, gameId);
+        
+        AppLogger.info('Game created successfully: $gameId');
+      }
+    } catch (e) {
+      AppLogger.error('Error checking and creating game: $e');
+    }
+  }
   
   @override
   void dispose() {

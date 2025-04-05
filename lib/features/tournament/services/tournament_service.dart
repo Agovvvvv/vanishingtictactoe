@@ -446,7 +446,12 @@ class TournamentService {
     }
   }
   
-  /// Create a new game within a match
+  /// Create a new game within a match - public method that can be called from provider
+  Future<String> createGameForMatch(String tournamentId, String matchId) async {
+    return _createGame(tournamentId, matchId);
+  }
+  
+  /// Create a new game within a match - private implementation
   Future<String> _createGame(String tournamentId, String matchId) async {
     try {
       // Get tournament

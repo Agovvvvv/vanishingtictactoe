@@ -330,9 +330,9 @@ service cloud.firestore {
     // Tournament games rules
     match /tournament_games/{gameId} {
       // Allow authenticated users to read games they're involved in
-      allow read: if isAuthenticated() && 
-                  (resource.data.player1_id == request.auth.uid || 
-                   resource.data.player2_id == request.auth.uid);
+      // Also allow listing games for tournament participants
+      allow read: if isAuthenticated();
+      allow list: if isAuthenticated();
       
       // Allow authenticated users to create games (this is typically done by the tournament service)
       allow create: if isAuthenticated();

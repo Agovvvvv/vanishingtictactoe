@@ -15,7 +15,7 @@ import 'package:vanishingtictactoe/shared/widgets/loading_indicator.dart';
 
 /// Screen for playing a tournament match
 class TournamentMatchScreen extends StatefulWidget {
-  static const routeName = '/tournament-match';
+  static const routeName = '/tournament/match';
   final String tournamentId;
   final String matchId;
   final String gameId;
@@ -193,7 +193,7 @@ class _TournamentMatchScreenState extends State<TournamentMatchScreen> {
                   // Navigate to the new game
                   Navigator.pushReplacementNamed(
                     context,
-                    '/tournament-match',
+                    '/tournament/match',
                     arguments: {
                       'tournamentId': widget.tournamentId,
                       'matchId': widget.matchId,

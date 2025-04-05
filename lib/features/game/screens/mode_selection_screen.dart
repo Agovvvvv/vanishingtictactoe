@@ -19,7 +19,7 @@ enum GameMode {
   vsComputer,
   online,
   friendlyMatch,
-  tournament,
+  //tournament,
   hellMode,
 }
 
@@ -100,7 +100,7 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> with TickerPr
 
       case GameMode.online:
       case GameMode.friendlyMatch:
-      case GameMode.tournament:
+      //case GameMode.tournament:
         if (userProvider.user == null) {
           if (context.mounted) {
             LoginDialog.show(context);
@@ -113,8 +113,8 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> with TickerPr
                 builder: (context) {
                   if (mode == GameMode.online) {
                     return const OnlineScreen();
-                  } else if (mode == GameMode.tournament) {
-                    return const TournamentSelectionScreen();
+                  // } else if (mode == GameMode.tournament) {
+                  //   return const TournamentSelectionScreen();
                   } else {
                     return const FriendlyMatchScreen();
                   }
@@ -122,8 +122,8 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> with TickerPr
                 settings: RouteSettings(
                   name: mode == GameMode.online 
                       ? '/online'
-                      : mode == GameMode.tournament 
-                          ? '/tournament'
+                      // : mode == GameMode.tournament 
+                      //     ? '/tournament'
                           : '/friendly-match'
                 ),
               ),
@@ -318,13 +318,13 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> with TickerPr
         'mode': GameMode.friendlyMatch,
         'delay': 0.3,
       },
-      {
-        'title': 'Tournament',
-        'description': 'Compete in a bracket-style tournament',
-        'icon': Icons.emoji_events_rounded,
-        'mode': GameMode.tournament,
-        'delay': 0.4,
-      },
+      // {
+      //   'title': 'Tournament',
+      //   'description': 'Compete in a bracket-style tournament',
+      //   'icon': Icons.emoji_events_rounded,
+      //   'mode': GameMode.tournament,
+      //   'delay': 0.4,
+      // },
     ];
     
     return modes.map((mode) {
