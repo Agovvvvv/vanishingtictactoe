@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
-import 'package:vanishingtictactoe/core/config/env_config.dart';
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -35,35 +34,38 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // Web configuration
-  static FirebaseOptions get web => FirebaseOptions(
-    apiKey: EnvConfig.firebaseWebApiKey,
-    appId: EnvConfig.firebaseWebAppId,
-    messagingSenderId: EnvConfig.firebaseWebMessagingSenderId,
-    projectId: EnvConfig.firebaseWebProjectId,
-    authDomain: EnvConfig.firebaseWebAuthDomain,
-    storageBucket: EnvConfig.firebaseWebStorageBucket,
-    measurementId: EnvConfig.firebaseWebMeasurementId,
-    databaseURL: EnvConfig.firebaseWebDatabaseUrl,
+  // Web configuration - USE dart-define values
+  static FirebaseOptions get web => const FirebaseOptions(
+    apiKey: String.fromEnvironment('FIREBASE_WEB_API_KEY'),
+    appId: String.fromEnvironment('FIREBASE_WEB_APP_ID'),
+    messagingSenderId: String.fromEnvironment('FIREBASE_WEB_MESSAGING_SENDER_ID'),
+    projectId: String.fromEnvironment('FIREBASE_WEB_PROJECT_ID'),
+    authDomain: String.fromEnvironment('FIREBASE_WEB_AUTH_DOMAIN'),
+    storageBucket: String.fromEnvironment('FIREBASE_WEB_STORAGE_BUCKET'),
+    measurementId: String.fromEnvironment('FIREBASE_WEB_MEASUREMENT_ID'),
+    databaseURL: String.fromEnvironment('FIREBASE_WEB_DATABASE_URL'),
   );
 
-  // Android configuration
-  static FirebaseOptions get android => FirebaseOptions(
-    apiKey: EnvConfig.firebaseAndroidApiKey,
-    appId: EnvConfig.firebaseAndroidAppId,
-    messagingSenderId: EnvConfig.firebaseAndroidMessagingSenderId,
-    projectId: EnvConfig.firebaseAndroidProjectId,
-    storageBucket: EnvConfig.firebaseAndroidStorageBucket,
+  // Android configuration - Assuming these still use EnvConfig or similar mechanism
+  // If Android/iOS also use dart-define, update them similarly.
+  // For now, leaving them as they might rely on flutter_dotenv for non-web builds.
+  // Consider migrating Android/iOS to dart-define as well for consistency.
+  static FirebaseOptions get android => const FirebaseOptions(
+    apiKey: String.fromEnvironment('FIREBASE_ANDROID_API_KEY'),
+    appId: String.fromEnvironment('FIREBASE_ANDROID_APP_ID'),
+    messagingSenderId: String.fromEnvironment('FIREBASE_ANDROID_MESSAGING_SENDER_ID'),
+    projectId: String.fromEnvironment('FIREBASE_ANDROID_PROJECT_ID'),
+    storageBucket: String.fromEnvironment('FIREBASE_ANDROID_STORAGE_BUCKET'),
   );
 
-  // iOS configuration
-  static FirebaseOptions get ios => FirebaseOptions(
-    apiKey: EnvConfig.firebaseIosApiKey,
-    appId: EnvConfig.firebaseIosAppId,
-    messagingSenderId: EnvConfig.firebaseIosMessagingSenderId,
-    projectId: EnvConfig.firebaseIosProjectId,
-    storageBucket: EnvConfig.firebaseIosStorageBucket,
-    iosClientId: EnvConfig.firebaseIosClientId,
-    iosBundleId: EnvConfig.firebaseIosBundleId,
+  // iOS configuration - Assuming these still use EnvConfig or similar mechanism
+  static FirebaseOptions get ios => const FirebaseOptions(
+    apiKey: String.fromEnvironment('FIREBASE_IOS_API_KEY'),
+    appId: String.fromEnvironment('FIREBASE_IOS_APP_ID'),
+    messagingSenderId: String.fromEnvironment('FIREBASE_IOS_MESSAGING_SENDER_ID'),
+    projectId: String.fromEnvironment('FIREBASE_IOS_PROJECT_ID'),
+    storageBucket: String.fromEnvironment('FIREBASE_IOS_STORAGE_BUCKET'),
+    iosClientId: String.fromEnvironment('FIREBASE_IOS_CLIENT_ID'),
+    iosBundleId: String.fromEnvironment('FIREBASE_IOS_BUNDLE_ID'),
   );
 }

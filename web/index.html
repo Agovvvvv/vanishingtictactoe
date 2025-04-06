@@ -19,139 +19,58 @@
   <link rel="manifest" href="manifest.json">
   
   <!-- Direct font loading for Flutter web -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  
-  <!-- Material Icons - Multiple formats for better browser compatibility -->
+
+  <!-- Define @font-face rules using LOCAL assets -->
   <style>
     @font-face {
-      font-family: 'Material Icons';
+      font-family: 'Material Icons'; /* Match Flutter's expected family name */
       font-style: normal;
       font-weight: 400;
-      src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
+      /* Point to the local asset preloaded below */
+      src: url(assets/fonts/MaterialIcons-Regular.ttf) format('truetype');
+      font-display: block; /* Use block to ensure it renders once loaded */
     }
-    
-    /* Font Awesome */
+
+    /* Font Awesome - Point to local package assets preloaded below */
     @font-face {
-      font-family: 'Font Awesome 5 Free';
+      font-family: 'FontAwesome'; /* Match font_awesome_flutter's expected family name */
       font-style: normal;
-      font-weight: 900;
+      font-weight: 900; /* Solid */
       font-display: block;
-      src: url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2) format('woff2');
+      /* Path within the built web app */
+      src: url(assets/packages/font_awesome_flutter/lib/fonts/fa-solid-900.ttf) format('truetype');
     }
-    
+
     @font-face {
-      font-family: 'Font Awesome 5 Free';
+      font-family: 'FontAwesome'; /* Match font_awesome_flutter's expected family name */
       font-style: normal;
-      font-weight: 400;
+      font-weight: 400; /* Regular */
       font-display: block;
-      src: url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2) format('woff2');
+       /* Path within the built web app - Assuming you might use regular icons */
+      src: url(assets/packages/font_awesome_flutter/lib/fonts/fa-regular-400.ttf) format('truetype');
     }
-    
+
     @font-face {
-      font-family: 'Font Awesome 5 Brands';
+      font-family: 'FontAwesomeBrands'; /* Match font_awesome_flutter's expected family name for Brands */
       font-style: normal;
-      font-weight: 400;
+      font-weight: 400; /* Brands */
       font-display: block;
-      src: url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2) format('woff2');
+      /* Path within the built web app */
+      src: url(assets/packages/font_awesome_flutter/lib/fonts/fa-brands-400.ttf) format('truetype');
     }
   </style>
-  
-  <!-- Backup CSS links -->
-  <!-- Load icon fonts with multiple fallback options -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Preload critical font files -->
+
+  <!-- Preload the LOCAL font files defined in @font-face above -->
   <link rel="preload" href="assets/fonts/MaterialIcons-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="assets/packages/font_awesome_flutter/lib/fonts/fa-solid-900.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="assets/packages/font_awesome_flutter/lib/fonts/fa-brands-400.ttf" as="font" type="font/ttf" crossorigin>
-  
-  <!-- Custom icons CSS -->
+  <!-- Optional: Preload regular if you use it -->
+  <link rel="preload" href="assets/packages/font_awesome_flutter/lib/fonts/fa-regular-400.ttf" as="font" type="font/ttf" crossorigin>
+
+  <!-- Custom icons CSS (Keep if you have custom icons) -->
   <link rel="stylesheet" href="icons/icons.css">
-  
-  <!-- Icon styles with better compatibility -->
-  <style>
-    /* Material Icons */
-    .material-icons {
-      font-family: 'Material Icons', sans-serif;
-      font-weight: normal;
-      font-style: normal;
-      font-size: 24px;
-      line-height: 1;
-      letter-spacing: normal;
-      text-transform: none;
-      display: inline-block;
-      white-space: nowrap;
-      word-wrap: normal;
-      direction: ltr;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    
-    /* Material Symbols */
-    .material-symbols-outlined {
-      font-family: 'Material Symbols Outlined', sans-serif;
-      font-weight: normal;
-      font-style: normal;
-      font-size: 24px;
-      line-height: 1;
-      letter-spacing: normal;
-      text-transform: none;
-      display: inline-block;
-      white-space: nowrap;
-      word-wrap: normal;
-      direction: ltr;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    
-    /* Font Awesome styles */
-    .fa, .fas {
-      font-family: 'Font Awesome 5 Free', sans-serif;
-      font-weight: 900;
-      font-style: normal;
-      font-variant: normal;
-      text-rendering: auto;
-      line-height: 1;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    
-    .far {
-      font-family: 'Font Awesome 5 Free', sans-serif;
-      font-weight: 400;
-      font-style: normal;
-      font-variant: normal;
-      text-rendering: auto;
-      line-height: 1;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    
-    .fab {
-      font-family: 'Font Awesome 5 Brands', sans-serif;
-      font-weight: 400;
-      font-style: normal;
-      font-variant: normal;
-      text-rendering: auto;
-      line-height: 1;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    
-    /* Ensure Flutter icons display properly */
-    @font-face {
-      font-family: 'MaterialIcons';
-      src: url('assets/fonts/MaterialIcons-Regular.ttf') format('truetype'),
-           url('https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2') format('woff2');
-      font-weight: normal;
-      font-style: normal;
-      font-display: block;
-    }
-  </style>
-  
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -162,151 +81,85 @@
   <script src="flutter.js" defer></script>
 </head>
 <body>
-  <!-- Firebase Configuration -->
-  <script src="firebase-config.js"></script>
-  <script>
-    // Make Firebase config available to Flutter but don't initialize Firebase here
-    // This allows Flutter to handle the initialization
-    window.firebaseConfig = window.firebaseConfig || {};
-    
-    // This function will be called by Flutter when it's ready to initialize Firebase
-    window.initializeFirebase = function() {
-      // Check if Firebase is already initialized
-      if (firebase.apps.length === 0) {
-        const firebaseApp = firebase.initializeApp(window.firebaseConfig);
-        const db = firebase.firestore();
-        db.settings({
-          ignoreUndefinedProperties: true,
-          cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-        });
-        console.log('Firebase initialized successfully by Flutter');
-        return true;
-      } else {
-        console.log('Firebase already initialized');
-        return false;
+  <!-- Loading indicator while Flutter loads -->
+  <div id="loading">
+    <style>
+      body {
+        background-color: #121212;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
       }
-    };
-  </script>
-
-  <!-- Script to help debug icon loading issues -->
-  <script>
-    // Enhanced function to check and fix font loading
-    function checkFontsLoaded() {
-      console.log('Checking if icon fonts are loaded...');
-      document.fonts.ready.then(function() {
-        console.log('System reports fonts are loaded');
-        
-        // Try multiple font names to handle different versions
-        const materialIconsLoaded = document.fonts.check('1em "Material Icons"') || 
-                                    document.fonts.check('1em "MaterialIcons"');
-        
-        // Check for both Font Awesome 5 and 6 to handle different versions
-        const fontAwesomeSolidLoaded = document.fonts.check('1em "Font Awesome 5 Free"') || 
-                                       document.fonts.check('1em "Font Awesome 6 Free"') ||
-                                       document.fonts.check('1em "FontAwesome"');
-        
-        const fontAwesomeBrandsLoaded = document.fonts.check('1em "Font Awesome 5 Brands"') || 
-                                        document.fonts.check('1em "Font Awesome 6 Brands"');
-        
-        console.log('Material Icons loaded:', materialIconsLoaded);
-        console.log('Font Awesome Solid loaded:', fontAwesomeSolidLoaded);
-        console.log('Font Awesome Brands loaded:', fontAwesomeBrandsLoaded);
-        
-        // Always inject fonts to ensure they're available
-        console.log('Injecting font definitions to ensure availability...');
-        console.warn('Ensuring font availability by injecting font definitions...');
-          
-        // Inject font styles directly
-        const style = document.createElement('style');
-        style.textContent = `
-            @font-face {
-              font-family: 'Material Icons';
-              src: url('assets/fonts/MaterialIcons-Regular.ttf') format('truetype');
-              font-weight: normal;
-              font-style: normal;
-            }
-            
-            @font-face {
-              font-family: 'Font Awesome 5 Free';
-              src: url('assets/packages/font_awesome_flutter/lib/fonts/fa-solid-900.ttf') format('truetype');
-              font-weight: 900;
-              font-style: normal;
-            }
-            
-            @font-face {
-              font-family: 'Font Awesome 5 Free';
-              src: url('assets/packages/font_awesome_flutter/lib/fonts/fa-regular-400.ttf') format('truetype');
-              font-weight: 400;
-              font-style: normal;
-            }
-            
-            @font-face {
-              font-family: 'Font Awesome 5 Brands';
-              src: url('assets/packages/font_awesome_flutter/lib/fonts/fa-brands-400.ttf') format('truetype');
-              font-weight: normal;
-              font-style: normal;
-            }
-          `;
-        document.head.appendChild(style);
-        
-        // Force reload of stylesheets
-        const links = document.querySelectorAll('link[rel="stylesheet"]');
-        links.forEach(link => {
-          const href = link.getAttribute('href');
-          if (href && (href.includes('material') || href.includes('font-awesome'))) {
-            const newLink = document.createElement('link');
-            newLink.rel = 'stylesheet';
-            newLink.href = href + '?reload=' + new Date().getTime();
-            link.parentNode.replaceChild(newLink, link);
-          }
-        });
-      });
-    }
-    
-    window.addEventListener('load', function() {
-      // Check fonts after a short delay
-      setTimeout(checkFontsLoaded, 1000);
-      // Handle errors
-      window.addEventListener('error', function(e) {
-        console.error('App Error:', e.message, e);
-      });
-
-      // Handle unhandled promise rejections
-      window.addEventListener('unhandledrejection', function(event) {
-        console.error('Unhandled Promise Rejection:', event.reason);
-      });
-
-      // Flutter initialization
-      const serviceWorkerVersion = '{{flutter_service_worker_version}}';
-      
-      // Load main.dart.js
-      const scriptTag = document.createElement('script');
-      scriptTag.src = 'main.dart.js';
-      scriptTag.type = 'application/javascript';
-      document.body.appendChild(scriptTag);
-      
-      // Register service worker
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('flutter-first-frame', function() {
-          navigator.serviceWorker.register('flutter_service_worker.js?v=' + serviceWorkerVersion);
-        });
+      #loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 999;
+        background-color: #121212;
+        transition: opacity 0.5s ease-out;
       }
-      
-      // Listen for Flutter initialization
-      window.addEventListener('flutter-first-frame', function() {
-        console.log('Flutter web app is ready!');
-      });
-    });
-    
-    // Add a global function to force icon refresh that can be called from Flutter
-    window.refreshIcons = function() {
-      console.log('Manual icon refresh requested');
-      checkFontsLoaded();
-      return true;
-    };
-  </script>
-  
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .loading-text {
+        margin-top: 20px;
+        color: white;
+        font-family: sans-serif;
+      }
+    </style>
+    <div class="spinner"></div>
+    <p class="loading-text">Loading Vanishing Tic Tac Toe...</p>
+  </div>
+
   <!-- Service Worker Registration -->
   <script src="service-worker-registration.js"></script>
+  
+  <script>
+    // Register the service worker first
+    registerServiceWorker();
+    
+    // Then initialize Flutter
+    window.addEventListener('load', function() {
+      // Set Flutter build configuration
+      window._flutter = window._flutter || {};
+      window._flutter.buildConfig = {
+        serviceWorkerVersion: '2025.04.06.5622', // Use the actual version from service-worker.js
+        baseHref: window.location.pathname
+      };
+      
+      // Load Flutter
+      const script = document.createElement('script');
+      script.src = 'main.dart.js';
+      script.type = 'application/javascript';
+      script.onload = function() {
+        // Hide loading indicator once Flutter is loaded
+        setTimeout(() => {
+          document.getElementById('loading').style.opacity = '0';
+          setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+          }, 500);
+        }, 1000); // Give Flutter a second to initialize
+      };
+      document.body.appendChild(script);
+    });
+  </script>
 </body>
 </html>

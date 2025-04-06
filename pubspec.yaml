@@ -75,6 +75,7 @@ flutter:
     - assets/images/tutorial/
     - assets/images/tutorial/hell_mini_game.png
     - .env
+    - assets/fonts/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -101,6 +102,10 @@ flutter:
   #   - family: Font Awesome 5 Brands
   #     fonts:
   #       - asset: assets/packages/font_awesome_flutter/lib/fonts/fa-brands-400.ttf
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+  fonts:
+    - family: MaterialIcons
+      fonts:
+        - asset: assets/fonts/MaterialIcons-Regular.ttf
+   #   - family: Schyler
+   #     fonts:
+   #       - asset: fonts/Schyler-Regular.ttf

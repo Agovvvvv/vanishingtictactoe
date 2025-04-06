@@ -6,7 +6,6 @@ import 'package:vanishingtictactoe/core/utils/app_logger.dart';
 import 'package:vanishingtictactoe/features/tournament/providers/tournament_provider.dart';
 import 'package:vanishingtictactoe/main_navigation_controller.dart';
 import 'core/config/firebase_options.dart';
-import 'package:vanishingtictactoe/core/config/env_config.dart';
 import 'core/routes/app_routes.dart';
 import 'core/navigation/navigation_service.dart';
 import 'features/tutorial/screens/tutorial_screen.dart';
@@ -25,9 +24,7 @@ const Color kPrimaryBlue = Color(0xFF2962FF);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Load environment variables before Firebase initialization
-  await EnvConfig.load();
-  AppLogger.info('Environment variables loaded successfully');
+  AppLogger.info('Initializing Firebase...');
   
   // Initialize Firebase with platform-specific options
   await Firebase.initializeApp(
