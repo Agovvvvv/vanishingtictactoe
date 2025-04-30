@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      // return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -35,16 +35,15 @@ class DefaultFirebaseOptions {
   }
 
   // Web configuration - USE dart-define values
-  static FirebaseOptions get web => const FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_WEB_API_KEY'),
-    appId: String.fromEnvironment('FIREBASE_WEB_APP_ID'),
-    messagingSenderId: String.fromEnvironment('FIREBASE_WEB_MESSAGING_SENDER_ID'),
-    projectId: String.fromEnvironment('FIREBASE_WEB_PROJECT_ID'),
-    authDomain: String.fromEnvironment('FIREBASE_WEB_AUTH_DOMAIN'),
-    storageBucket: String.fromEnvironment('FIREBASE_WEB_STORAGE_BUCKET'),
-    measurementId: String.fromEnvironment('FIREBASE_WEB_MEASUREMENT_ID'),
-    databaseURL: String.fromEnvironment('FIREBASE_WEB_DATABASE_URL'),
-  );
+  // static FirebaseOptions get web => const FirebaseOptions(
+  //   apiKey: "AIzaSyBqAYPCRQ99N3L5Yri34Fz8_Bn5_fwTD4U",
+  // authDomain: "vanishing-tic-tac-toe.firebaseapp.com",
+  // projectId: "vanishing-tic-tac-toe",
+  // storageBucket: "vanishing-tic-tac-toe.firebasestorage.app",
+  // messagingSenderId: "65264182696",
+  // appId: "1:65264182696:web:531d1d69f244c289a2a99d",
+  // measurementId: "G-FKNT04Y1VT"
+  // );
 
   // Android configuration - Assuming these still use EnvConfig or similar mechanism
   // If Android/iOS also use dart-define, update them similarly.

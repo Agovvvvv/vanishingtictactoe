@@ -56,21 +56,35 @@ class GameEndDialog extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(28), // Material 3 uses more rounded corners
         ),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOutQuint,
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.shadow.withValues( alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-                spreadRadius: 1,
-              ),
-            ],
+        // Use ConstrainedBox to ensure the dialog has appropriate size constraints
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 400, // Limit maximum width for better readability
+            minWidth: 280, // Ensure minimum width for content
           ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOutQuint,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                // Main shadow - subtle Material 3 style
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                  spreadRadius: 0.5,
+                ),
+                // Subtle inner highlight
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.05),
+                  blurRadius: 4,
+                  spreadRadius: -2,
+                  offset: const Offset(0, -1),
+                ),
+              ],
+            ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -284,6 +298,7 @@ class GameEndDialog extends StatelessWidget {
             ],
           ),
         ),
+      ),
       );
     } catch (e) {
       AppLogger.error('Error building GameEndDialog: $e');
@@ -458,7 +473,7 @@ class GameEndDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.shadow.withValues( alpha: 0.1),
+                    color: colorScheme.shadow.withOpacity(0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -495,7 +510,7 @@ class GameEndDialog extends StatelessWidget {
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
-                                color: colorScheme.tertiary.withValues( alpha: 0.2),
+                                color: colorScheme.tertiary.withOpacity(0.2),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -518,7 +533,7 @@ class GameEndDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: colorScheme.surface.withValues( alpha: 0.7),
+                      color: colorScheme.surface.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(

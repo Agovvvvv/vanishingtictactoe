@@ -57,18 +57,20 @@ class _CoinFlipEffectState extends State<CoinFlipEffect> with SingleTickerProvid
     return AnimatedBuilder(
       animation: Listenable.merge([widget.flipAnimation, _glowAnimation]),
       builder: (context, child) {
+        // Pre-calculate values once to avoid redundant calculations
+        final sinValue = math.sin(widget.flipAnimation.value).abs();
         final showFront = widget.isComplete
             ? widget.showFront
             : (widget.flipAnimation.value / math.pi).floor() % 2 == 0;
         
         // Calculate a dynamic scale factor for 3D effect
-        final scaleFactor = 1.0 - 0.2 * math.sin(widget.flipAnimation.value).abs();
+        final scaleFactor = 1.0 - 0.15 * sinValue;
         
         // Calculate shadow opacity based on rotation
-        final shadowOpacity = 0.3 + (0.2 * math.sin(widget.flipAnimation.value).abs());
+        final shadowOpacity = 0.3 + (0.2 * sinValue);
         
         // Calculate edge thickness based on rotation angle
-        final edgeVisible = math.sin(widget.flipAnimation.value).abs() > 0.98;
+        final edgeVisible = sinValue > 0.95;
         
         // Determine colors based on which side is showing
         final primaryColor = showFront 
@@ -97,26 +99,26 @@ class _CoinFlipEffectState extends State<CoinFlipEffect> with SingleTickerProvid
                       0.2 + (0.3 * math.sin(widget.flipAnimation.value)),
                       -0.3 - (0.2 * math.cos(widget.flipAnimation.value)),
                     ),
-                    radius: 0.7,
+                    radius: 0.8,  // Slightly larger radius for more realistic lighting
                     colors: [
-                      Color.lerp(secondaryColor, Colors.white, 0.4) ?? secondaryColor,
+                      Color.lerp(secondaryColor, Colors.white, 0.5) ?? secondaryColor,
                       primaryColor,
                     ],
-                    stops: const [0.5, 1.0],
+                    stops: const [0.4, 1.0],  // Adjusted stops for better gradient
                   ),
                   boxShadow: [
-                    // Main shadow
+                    // Main shadow - more subtle and Material 3 style
                     BoxShadow(
-                      color: primaryColor.withValues(alpha: shadowOpacity),
-                      blurRadius: 25,
-                      spreadRadius: 3,
-                      offset: const Offset(0, 10),
+                      color: primaryColor.withOpacity(shadowOpacity * 0.8),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 8),
                     ),
-                    // Inner glow
+                    // Inner glow with improved animation
                     BoxShadow(
-                      color: secondaryColor.withValues(alpha: 0.3 * _glowAnimation.value),
-                      blurRadius: 15,
-                      spreadRadius: -2,
+                      color: secondaryColor.withOpacity(0.25 * _glowAnimation.value),
+                      blurRadius: 12,
+                      spreadRadius: -1,
                     ),
                   ],
                 ),
@@ -128,7 +130,7 @@ class _CoinFlipEffectState extends State<CoinFlipEffect> with SingleTickerProvid
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
+                            color: Colors.white.withOpacity(0.3),
                             width: 2,
                           ),
                         ),
@@ -145,10 +147,10 @@ class _CoinFlipEffectState extends State<CoinFlipEffect> with SingleTickerProvid
                             style: TextStyle(
                               fontSize: 80,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white.withValues(alpha: 0.3 * _glowAnimation.value),
+                              color: Colors.white.withOpacity(0.3 * _glowAnimation.value),
                               shadows: [
                                 Shadow(
-                                  color: Colors.white.withValues(alpha: 0.5 * _glowAnimation.value),
+                                  color: Colors.white.withOpacity(0.5 * _glowAnimation.value),
                                   blurRadius: 15,
                                 ),
                               ],
@@ -164,12 +166,12 @@ class _CoinFlipEffectState extends State<CoinFlipEffect> with SingleTickerProvid
                               color: Colors.white,
                               shadows: [
                                 Shadow(
-                                  color: Colors.black.withValues(alpha: 0.5),
+                                  color: Colors.black.withOpacity(0.5),
                                   blurRadius: 5,
                                   offset: const Offset(2, 2),
                                 ),
                                 Shadow(
-                                  color: Colors.white.withValues(alpha: 0.5),
+                                  color: Colors.white.withOpacity(0.5),
                                   blurRadius: 5,
                                   offset: const Offset(-1, -1),
                                 ),
@@ -196,7 +198,7 @@ class _CoinFlipEffectState extends State<CoinFlipEffect> with SingleTickerProvid
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: primaryColor.withValues(alpha: 0.3 + (0.4 * _glowAnimation.value)),
+                          color: primaryColor.withOpacity(0.3 + (0.4 * _glowAnimation.value)),
                           width: 3 + (2 * _glowAnimation.value),
                         ),
                       ),

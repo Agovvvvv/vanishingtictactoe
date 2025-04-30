@@ -253,24 +253,24 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                               colors: [
                                 Color.lerp(
                                   colorScheme.surface.withOpacity(0.95),
-                                  primaryColor.withValues(alpha: 0.08),
+                                  primaryColor.withOpacity(0.08),
                                   _backgroundAnimation.value,
                                 ) ?? colorScheme.surface.withOpacity(0.95),
                                 Color.lerp(
                                   colorScheme.surfaceContainerHigh.withOpacity(0.9),
-                                  primaryColor.withValues(alpha: 0.15),
+                                  primaryColor.withOpacity(0.15),
                                   _backgroundAnimation.value,
                                 ) ?? colorScheme.surfaceContainerHigh.withOpacity(0.9),
                                 Color.lerp(
                                   colorScheme.surfaceContainerHighest.withOpacity(0.85),
-                                  secondaryColor.withValues(alpha: 0.15),
+                                  secondaryColor.withOpacity(0.15),
                                   _backgroundAnimation.value,
                                 ) ?? colorScheme.surfaceContainerHighest.withOpacity(0.85),
                                 Color.lerp(
-                                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
-                                  secondaryColor.withValues(alpha: 0.08),
+                                  colorScheme.surfaceContainerHighest.withOpacity(0.8),
+                                  secondaryColor.withOpacity(0.08),
                                   _backgroundAnimation.value,
-                                ) ?? colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+                                ) ?? colorScheme.surfaceContainerHighest.withOpacity(0.8),
                               ],
                             ),
                           ),
